@@ -22,9 +22,12 @@ async def test_endpoint(request: Request):
 @router.get("/api/info")
 async def rate_limit_info():
     """Get current rate limit configuration"""
+    from app.config import get_settings
+    settings = get_settings()
+    
     return {
-        "max_requests": 100,
-        "window_seconds": 60,
+        "max_requests": settings.default_rate_limit,  # ← Dynamic!
+        "window_seconds": settings.default_window_seconds,
         "algorithm": "Token Bucket"
     }
 
