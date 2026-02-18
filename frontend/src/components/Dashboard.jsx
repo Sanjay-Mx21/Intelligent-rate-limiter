@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   LineChart,
   Line,
@@ -6,19 +6,23 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
+  Area,
+  AreaChart,
 } from "recharts";
-import { getRateLimitInfo } from "../services/api";
+import { getRateLimitInfo, testRequest } from "../services/api";
 import StatsCard from "./StatsCard";
 
 const Dashboard = ({
   globalStats,
   graphData,
   isLive,
-  toggleLiveMonitoring,
+  setIsLive,
+  setGraphData,
+  setGlobalStats,
 }) => {
   const [rateLimitInfo, setRateLimitInfo] = React.useState(null);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     const fetchInfo = async () => {
@@ -28,199 +32,279 @@ const Dashboard = ({
     fetchInfo();
   }, []);
 
+  const toggleLiveMonitoring = () => {
+    if (isLive) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setIsLive(false);
+    } else {
+      setIsLive(true);
+      intervalRef.current = setInterval(async () => {
+        const result = await testRequest("monitor_user");
+        const now = new Date().toLocaleTimeString();
+
+        setGraphData((prev) => {
+          const newPoint = {
+            time: now,
+            remaining: result.success ? parseInt(result.remaining) : 0,
+          };
+          return [...prev, newPoint].slice(-20);
+        });
+
+        setGlobalStats((prev) => ({
+          success: prev.success + (result.success ? 1 : 0),
+          blocked: prev.blocked + (result.success ? 0 : 1),
+        }));
+      }, 1000);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
   const totalRequests = globalStats.success + globalStats.blocked;
+  const blockRate =
+    totalRequests > 0
+      ? ((globalStats.blocked / totalRequests) * 100).toFixed(1)
+      : 0;
 
   return (
-    <div style={{ padding: "24px" }}>
+    <div>
+      {/* Top Section - Config Info & Live Monitor Button */}
       <div
+        className="neo-card"
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
           marginBottom: "24px",
+          background:
+            "linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)",
         }}
       >
-        <div>
-          <h2
-            style={{
-              margin: "0 0 4px 0",
-              fontSize: "20px",
-              fontWeight: "700",
-              color: "#1e293b",
-            }}
-          >
-            📊 Live Dashboard
-          </h2>
-          <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>
-            Real-time monitoring of rate limiter activity
-          </p>
-        </div>
-
-        <button
-          onClick={toggleLiveMonitoring}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: isLive ? "#ef4444" : "#22c55e",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "700",
-            fontSize: "14px",
-          }}
-        >
-          {isLive ? "⏹ Stop Monitoring" : "▶ Start Live Monitor"}
-        </button>
-      </div>
-
-      {/* Rate Limit Config */}
-      {rateLimitInfo && (
         <div
           style={{
-            padding: "12px 16px",
-            backgroundColor: "#eff6ff",
-            border: "2px solid #93c5fd",
-            borderRadius: "8px",
-            marginBottom: "24px",
-            fontSize: "14px",
-            color: "#1d4ed8",
             display: "flex",
-            gap: "24px",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "16px",
           }}
         >
-          <span>
-            ⚙️ <strong>Algorithm:</strong> {rateLimitInfo.algorithm}
-          </span>
-          <span>
-            🎯 <strong>Max Requests:</strong> {rateLimitInfo.max_requests}
-          </span>
-          <span>
-            ⏱️ <strong>Window:</strong> {rateLimitInfo.window_seconds} seconds
-          </span>
-        </div>
-      )}
+          {rateLimitInfo && (
+            <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+              {[
+                {
+                  icon: "⚙️",
+                  label: "Algorithm",
+                  value: rateLimitInfo.algorithm,
+                },
+                {
+                  icon: "🎯",
+                  label: "Max Requests",
+                  value: rateLimitInfo.max_requests,
+                },
+                {
+                  icon: "⏱️",
+                  label: "Window",
+                  value: `${rateLimitInfo.window_seconds}s`,
+                },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <span style={{ fontSize: "20px" }}>{item.icon}</span>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#64748b",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "15px",
+                        fontWeight: "800",
+                        color: "#1e293b",
+                      }}
+                    >
+                      {item.value}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-      {/* Stats Cards */}
+          <button
+            onClick={toggleLiveMonitoring}
+            className="gradient-button"
+            style={{
+              padding: "12px 24px",
+              fontSize: "14px",
+              fontWeight: "700",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              background: isLive
+                ? "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+                : "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+            }}
+          >
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: "white",
+                animation: isLive ? "pulse 1s infinite" : "none",
+              }}
+            />
+            {isLive ? "⏹ Stop Monitor" : "▶ Start Live Monitor"}
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards Grid */}
       <div
         style={{
-          display: "flex",
-          gap: "16px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "20px",
           marginBottom: "24px",
-          flexWrap: "wrap",
         }}
       >
         <StatsCard
           title="Total Requests"
           value={totalRequests}
           icon="📊"
-          color="blue"
+          gradient="blue"
           subtitle="Since monitoring started"
         />
         <StatsCard
           title="Successful"
           value={globalStats.success}
           icon="✅"
-          color="green"
+          gradient="green"
           subtitle="Allowed through"
         />
         <StatsCard
           title="Blocked"
           value={globalStats.blocked}
           icon="🚫"
-          color="red"
+          gradient="red"
           subtitle="Rate limited"
         />
         <StatsCard
           title="Block Rate"
-          value={
-            totalRequests > 0
-              ? `${((globalStats.blocked / totalRequests) * 100).toFixed(1)}%`
-              : "0%"
-          }
+          value={`${blockRate}%`}
           icon="⚠️"
-          color="orange"
+          gradient="orange"
           subtitle="Of total requests"
         />
       </div>
 
-      {/* Graph */}
-      <div
-        style={{
-          backgroundColor: "white",
-          border: "2px solid #e2e8f0",
-          borderRadius: "12px",
-          padding: "20px",
-          marginBottom: "24px",
-        }}
-      >
+      {/* Graph Card */}
+      <div className="neo-card" style={{ marginBottom: "24px" }}>
         <h3
           style={{
-            margin: "0 0 16px 0",
-            fontSize: "15px",
-            fontWeight: "700",
+            margin: "0 0 20px 0",
+            fontSize: "18px",
+            fontWeight: "800",
             color: "#1e293b",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
           }}
         >
-          📈 Tokens Remaining Over Time
+          <span>📈</span> Tokens Remaining Over Time
         </h3>
 
         {graphData.length === 0 ? (
           <div
             style={{
-              height: "200px",
+              height: "250px",
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              color: "#94a3b8",
-              fontSize: "14px",
-              backgroundColor: "#f8fafc",
-              borderRadius: "8px",
-              border: "2px dashed #e2e8f0",
+              background:
+                "linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)",
+              borderRadius: "12px",
+              border: "2px dashed rgba(102, 126, 234, 0.3)",
             }}
           >
-            {isLive
-              ? "⏳ Waiting for data..."
-              : '▶ Click "Start Live Monitor" to see real-time data!'}
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>
+              {isLive ? "⏳" : "📊"}
+            </div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "15px",
+                color: "#64748b",
+                fontWeight: "600",
+              }}
+            >
+              {isLive
+                ? "Waiting for data..."
+                : 'Click "Start Live Monitor" to see real-time data!'}
+            </p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={graphData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="time" tick={{ fontSize: 11, fill: "#64748b" }} />
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={graphData}>
+              <defs>
+                <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#667eea" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#764ba2" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis
+                dataKey="time"
+                tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
+                stroke="#cbd5e1"
+              />
               <YAxis
-                tick={{ fontSize: 11, fill: "#64748b" }}
+                tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
                 domain={[0, 100]}
+                stroke="#cbd5e1"
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#1e293b",
+                  background: "rgba(255,255,255,0.95)",
+                  backdropFilter: "blur(10px)",
                   border: "none",
-                  borderRadius: "8px",
-                  color: "white",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                  fontWeight: 600,
                   fontSize: "12px",
                 }}
               />
-              <Legend />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="remaining"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                dot={{ fill: "#3b82f6", r: 4 }}
+                stroke="#667eea"
+                strokeWidth={3}
+                fill="url(#colorGradient)"
                 name="Tokens Remaining"
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         )}
       </div>
 
-      {/* Status */}
+      {/* Status Indicator */}
       <div
+        className="neo-card"
         style={{
-          padding: "16px",
-          backgroundColor: isLive ? "#f0fdf4" : "#f8fafc",
-          border: `2px solid ${isLive ? "#86efac" : "#e2e8f0"}`,
-          borderRadius: "10px",
+          background: isLive
+            ? "linear-gradient(135deg, rgba(67, 233, 123, 0.1) 0%, rgba(56, 249, 215, 0.1) 100%)"
+            : "linear-gradient(135deg, rgba(148, 163, 184, 0.1) 0%, rgba(203, 213, 225, 0.1) 100%)",
           display: "flex",
           alignItems: "center",
           gap: "12px",
@@ -231,14 +315,17 @@ const Dashboard = ({
             width: "12px",
             height: "12px",
             borderRadius: "50%",
-            backgroundColor: isLive ? "#22c55e" : "#94a3b8",
+            background: isLive
+              ? "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
+              : "#94a3b8",
+            boxShadow: isLive ? "0 0 20px rgba(67, 233, 123, 0.6)" : "none",
           }}
         />
         <span
           style={{
             fontSize: "14px",
-            fontWeight: "600",
-            color: isLive ? "#15803d" : "#64748b",
+            fontWeight: "700",
+            color: isLive ? "#059669" : "#64748b",
           }}
         >
           {isLive
@@ -246,6 +333,13 @@ const Dashboard = ({
             : "⚪ Monitoring stopped - click Start to begin"}
         </span>
       </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+      `}</style>
     </div>
   );
 };

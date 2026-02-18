@@ -1,87 +1,91 @@
 import React from "react";
 
-const StatsCard = ({ title, value, subtitle, color, icon }) => {
-  const colors = {
-    green: {
-      bg: "#f0fdf4",
-      border: "#86efac",
-      text: "#16a34a",
-      value: "#15803d",
-    },
-    red: {
-      bg: "#fef2f2",
-      border: "#fca5a5",
-      text: "#dc2626",
-      value: "#b91c1c",
-    },
-    blue: {
-      bg: "#eff6ff",
-      border: "#93c5fd",
-      text: "#2563eb",
-      value: "#1d4ed8",
-    },
-    orange: {
-      bg: "#fff7ed",
-      border: "#fdba74",
-      text: "#ea580c",
-      value: "#c2410c",
-    },
+const StatsCard = ({ title, value, subtitle, icon, gradient }) => {
+  const gradients = {
+    purple: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    blue: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    green: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+    orange: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+    red: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
   };
-
-  const scheme = colors[color] || colors.blue;
 
   return (
     <div
+      className="neo-card"
       style={{
-        backgroundColor: scheme.bg,
-        border: `2px solid ${scheme.border}`,
-        borderRadius: "12px",
-        padding: "20px",
         flex: 1,
-        minWidth: "150px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        minWidth: "200px",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
+      {/* Gradient accent bar on top */}
       <div
         style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "4px",
+          background: gradients[gradient] || gradients.purple,
+        }}
+      />
+
+      {/* Icon with gradient background */}
+      <div
+        style={{
+          width: "48px",
+          height: "48px",
+          borderRadius: "12px",
+          background: gradients[gradient] || gradients.purple,
           display: "flex",
           alignItems: "center",
-          gap: "8px",
-          marginBottom: "8px",
+          justifyContent: "center",
+          fontSize: "24px",
+          marginBottom: "16px",
+          boxShadow: "0 4px 15px rgba(102, 126, 234, 0.3)",
         }}
       >
-        <span style={{ fontSize: "20px" }}>{icon}</span>
-        <p
-          style={{
-            margin: 0,
-            fontSize: "13px",
-            fontWeight: "600",
-            color: scheme.text,
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-          }}
-        >
-          {title}
-        </p>
+        {icon}
       </div>
+
+      {/* Title */}
+      <p
+        style={{
+          margin: "0 0 8px 0",
+          fontSize: "12px",
+          fontWeight: "700",
+          color: "#64748b",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+        }}
+      >
+        {title}
+      </p>
+
+      {/* Value */}
       <p
         style={{
           margin: "0 0 4px 0",
-          fontSize: "32px",
+          fontSize: "36px",
           fontWeight: "800",
-          color: scheme.value,
-          lineHeight: 1,
+          background: gradients[gradient] || gradients.purple,
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          lineHeight: 1.2,
         }}
       >
         {value}
       </p>
+
+      {/* Subtitle */}
       {subtitle && (
         <p
           style={{
             margin: 0,
-            fontSize: "12px",
-            color: scheme.text,
-            opacity: 0.8,
+            fontSize: "13px",
+            color: "#94a3b8",
+            fontWeight: "500",
           }}
         >
           {subtitle}

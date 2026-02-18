@@ -1,7 +1,7 @@
-import AnomalyAlert from "./AnomalyAlert";
 import React, { useState } from "react";
 import { testRequest, spamRequests } from "../services/api";
 import StatsCard from "./StatsCard";
+import AnomalyAlert from "./AnomalyAlert";
 
 const LiveTester = ({ globalStats, logs, updateStats, resetAll }) => {
   const [isRunning, setIsRunning] = useState(false);
@@ -39,206 +39,267 @@ const LiveTester = ({ globalStats, logs, updateStats, resetAll }) => {
       ? ((globalStats.success / totalRequests) * 100).toFixed(1)
       : 0;
 
+  const buttons = [
+    {
+      label: "📤 Send 1 Request",
+      count: 1,
+      gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    },
+    {
+      label: "⚡ Send 10 Requests",
+      count: 10,
+      gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    },
+    {
+      label: "🔥 Send 50 Requests",
+      count: 50,
+      gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+    },
+    {
+      label: "💣 SPAM 150!",
+      count: 150,
+      gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    },
+  ];
+
   return (
-    <div style={{ padding: "24px" }}>
-      <h2
-        style={{
-          margin: "0 0 8px 0",
-          fontSize: "20px",
-          fontWeight: "700",
-          color: "#1e293b",
-        }}
-      >
-        🧪 Live Rate Limiter Tester
-      </h2>
-      <p style={{ margin: "0 0 24px 0", color: "#64748b", fontSize: "14px" }}>
-        Send requests and watch the rate limiter in action!
-      </p>
+    <div>
+      {/* Header */}
+      <div className="neo-card" style={{ marginBottom: "24px" }}>
+        <h2
+          style={{
+            margin: "0 0 8px 0",
+            fontSize: "22px",
+            fontWeight: "800",
+            color: "#1e293b",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <span>🧪</span> Live Rate Limiter Tester
+        </h2>
+        <p
+          style={{
+            margin: 0,
+            color: "#64748b",
+            fontSize: "14px",
+            fontWeight: "500",
+          }}
+        >
+          Send requests and watch the rate limiter in action!
+        </p>
+      </div>
 
       {/* User ID Input */}
-      <div style={{ marginBottom: "20px" }}>
+      <div className="neo-card" style={{ marginBottom: "24px" }}>
         <label
           style={{
             display: "block",
-            marginBottom: "6px",
+            marginBottom: "8px",
             fontSize: "13px",
-            fontWeight: "600",
-            color: "#374151",
+            fontWeight: "700",
+            color: "#475569",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
           }}
         >
-          API Key / User ID:
+          🔑 API Key / User ID:
         </label>
         <input
           type="text"
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
+          placeholder="Enter user ID"
           style={{
-            padding: "10px 14px",
-            borderRadius: "8px",
-            border: "2px solid #e2e8f0",
-            fontSize: "14px",
-            width: "280px",
+            width: "100%",
+            padding: "14px 18px",
+            borderRadius: "12px",
+            border: "2px solid rgba(102, 126, 234, 0.2)",
+            fontSize: "15px",
+            fontWeight: "600",
             outline: "none",
-            color: "#1e293b",
+            background: "rgba(255,255,255,0.8)",
+            transition: "all 0.3s ease",
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = "#667eea";
+            e.target.style.boxShadow = "0 0 0 4px rgba(102, 126, 234, 0.1)";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = "rgba(102, 126, 234, 0.2)";
+            e.target.style.boxShadow = "none";
           }}
         />
       </div>
 
-      {/* Buttons */}
-      <div
-        style={{
-          display: "flex",
-          gap: "10px",
-          flexWrap: "wrap",
-          marginBottom: "24px",
-        }}
-      >
-        {[
-          { label: "📤 Send 1 Request", count: 1, color: "#3b82f6" },
-          { label: "⚡ Send 10 Requests", count: 10, color: "#8b5cf6" },
-          { label: "🔥 Send 50 Requests", count: 50, color: "#f59e0b" },
-          { label: "💣 SPAM 150 Requests!", count: 150, color: "#ef4444" },
-        ].map((btn) => (
-          <button
-            key={btn.count}
-            onClick={() =>
-              btn.count === 1 ? handleSingleRequest() : handleSpam(btn.count)
-            }
-            disabled={isRunning}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: btn.color,
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              cursor: isRunning ? "not-allowed" : "pointer",
-              fontWeight: "600",
-              fontSize: "14px",
-              opacity: isRunning ? 0.7 : 1,
-            }}
-          >
-            {btn.label}
-          </button>
-        ))}
-
-        <button
-          onClick={resetAll}
-          disabled={isRunning}
+      {/* Action Buttons */}
+      <div className="neo-card" style={{ marginBottom: "24px" }}>
+        <div
           style={{
-            padding: "10px 20px",
-            backgroundColor: "#6b7280",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: isRunning ? "not-allowed" : "pointer",
-            fontWeight: "600",
-            fontSize: "14px",
-            opacity: isRunning ? 0.7 : 1,
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "12px",
           }}
         >
-          🔄 Reset All
-        </button>
+          {buttons.map((btn) => (
+            <button
+              key={btn.count}
+              onClick={() =>
+                btn.count === 1 ? handleSingleRequest() : handleSpam(btn.count)
+              }
+              disabled={isRunning}
+              className="gradient-button"
+              style={{
+                padding: "16px 20px",
+                fontSize: "14px",
+                fontWeight: "700",
+                background: btn.gradient,
+                opacity: isRunning ? 0.6 : 1,
+                cursor: isRunning ? "not-allowed" : "pointer",
+              }}
+            >
+              {btn.label}
+            </button>
+          ))}
+
+          <button
+            onClick={resetAll}
+            disabled={isRunning}
+            style={{
+              padding: "16px 20px",
+              fontSize: "14px",
+              fontWeight: "700",
+              borderRadius: "12px",
+              border: "2px solid #cbd5e1",
+              background: "rgba(255,255,255,0.8)",
+              color: "#475569",
+              cursor: isRunning ? "not-allowed" : "pointer",
+              opacity: isRunning ? 0.6 : 1,
+              transition: "all 0.3s ease",
+            }}
+          >
+            🔄 Reset All
+          </button>
+        </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats Cards */}
       <div
         style={{
-          display: "flex",
-          gap: "16px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "20px",
           marginBottom: "24px",
-          flexWrap: "wrap",
         }}
       >
         <StatsCard
           title="Total Requests"
           value={totalRequests}
           icon="📊"
-          color="blue"
+          gradient="blue"
           subtitle="Sent so far"
         />
         <StatsCard
           title="Successful"
           value={globalStats.success}
           icon="✅"
-          color="green"
+          gradient="green"
           subtitle="Allowed through"
         />
         <StatsCard
           title="Blocked"
           value={globalStats.blocked}
           icon="🚫"
-          color="red"
+          gradient="red"
           subtitle="Rate limited"
         />
         <StatsCard
           title="Success Rate"
           value={`${successRate}%`}
           icon="🎯"
-          color="orange"
+          gradient="orange"
           subtitle="Of total requests"
         />
       </div>
 
-      {/* Loading */}
+      {/* Loading indicator */}
       {isRunning && (
         <div
+          className="neo-card"
           style={{
-            padding: "12px 16px",
-            backgroundColor: "#fef3c7",
-            border: "2px solid #fbbf24",
-            borderRadius: "8px",
-            marginBottom: "16px",
-            fontSize: "14px",
-            fontWeight: "600",
-            color: "#92400e",
+            marginBottom: "24px",
+            background:
+              "linear-gradient(135deg, rgba(250, 112, 154, 0.1) 0%, rgba(254, 225, 64, 0.1) 100%)",
+            border: "2px solid rgba(250, 112, 154, 0.3)",
+            textAlign: "center",
+            padding: "20px",
           }}
         >
-          ⏳ Sending requests... Please wait!
+          <div style={{ fontSize: "32px", marginBottom: "8px" }}>⏳</div>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "15px",
+              fontWeight: "700",
+              color: "#be185d",
+            }}
+          >
+            Sending requests... Please wait!
+          </p>
         </div>
       )}
 
-      {/* Logs */}
+      {/* Request Logs */}
       {logs.length > 0 && (
-        <div>
+        <div className="neo-card" style={{ marginBottom: "24px" }}>
           <h3
             style={{
-              margin: "0 0 12px 0",
-              fontSize: "15px",
-              fontWeight: "700",
+              margin: "0 0 16px 0",
+              fontSize: "16px",
+              fontWeight: "800",
               color: "#1e293b",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
             }}
           >
-            📝 Request Log (Latest 50)
+            <span>📝</span> Request Log (Latest 50)
           </h3>
           <div
             style={{
-              border: "2px solid #e2e8f0",
-              borderRadius: "10px",
+              borderRadius: "12px",
               overflow: "hidden",
-              maxHeight: "350px",
+              maxHeight: "400px",
               overflowY: "auto",
+              border: "2px solid rgba(226, 232, 240, 0.5)",
             }}
           >
             {logs.map((log, index) => (
               <div
                 key={index}
                 style={{
-                  padding: "10px 16px",
-                  backgroundColor: log.success ? "#f0fdf4" : "#fef2f2",
-                  borderBottom: "1px solid #e2e8f0",
+                  padding: "14px 18px",
+                  background: log.success
+                    ? "linear-gradient(90deg, rgba(67, 233, 123, 0.1) 0%, rgba(255,255,255,0.5) 100%)"
+                    : "linear-gradient(90deg, rgba(240, 147, 251, 0.1) 0%, rgba(255,255,255,0.5) 100%)",
+                  borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                   fontSize: "13px",
+                  fontWeight: "600",
+                  flexWrap: "wrap",
+                  gap: "8px",
                 }}
               >
-                <span style={{ fontWeight: "600" }}>
+                <span style={{ color: "#1e293b" }}>
                   {log.success ? "✅" : "🚫"} Request
                 </span>
                 <span
                   style={{
-                    color: log.success ? "#16a34a" : "#dc2626",
-                    fontWeight: "700",
+                    color: log.success ? "#059669" : "#be185d",
+                    fontWeight: "800",
                   }}
                 >
                   {log.success ? "200 OK" : "429 BLOCKED"}
@@ -254,6 +315,7 @@ const LiveTester = ({ globalStats, logs, updateStats, resetAll }) => {
           </div>
         </div>
       )}
+
       {/* Anomaly Detection */}
       <AnomalyAlert userId={userId} />
     </div>
