@@ -1,7 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
