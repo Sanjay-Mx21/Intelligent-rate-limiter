@@ -9,14 +9,17 @@ settings = get_settings()
 redis_url = os.environ.get("REDIS_URL")
 
 if redis_url:
-    # Railway deployment - use URL directly
-    redis_client = redis.from_url(redis_url, decode_responses=False)
+    # Railway deployment - use URL, disable SSL verification
+    redis_client = redis.from_url(
+        redis_url,
+        decode_responses=False,
+        ssl_cert_reqs=None
+    )
 else:
-    # Local development - use host/port
+    # Local development
     redis_client = redis.Redis(
         host=settings.redis_host,
         port=settings.redis_port,
-        password=settings.redis_password if settings.redis_password else None,
         decode_responses=False
     )
 
