@@ -18,6 +18,7 @@ const AnomalyAlert = ({ userId }) => {
     fetchAnomaly();
     const interval = setInterval(fetchAnomaly, 5000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   if (isLoading && !anomalyData) {
