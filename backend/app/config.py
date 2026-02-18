@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Rate Limiting
-    default_rate_limit: int = 60
+    default_rate_limit: int = 20
     default_window_seconds: int = 60
 
     class Config:
