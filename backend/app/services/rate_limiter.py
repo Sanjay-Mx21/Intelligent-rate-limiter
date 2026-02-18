@@ -1,25 +1,27 @@
 import redis
 import os
+from urllib.parse import urlparse
 from app.config import get_settings
 from app.services.algorithms import TokenBucketRateLimiter
 
 settings = get_settings()
 
-# Use REDIS_URL if available (Railway), otherwise use host/port (local)
+# Get Redis URL from environment
 redis_url = os.environ.get("REDIS_URL")
 
 if redis_url:
-    # Railway deployment - parse URL and handle SSL
-    if redis_url.startswith("rediss://"):
-        # SSL Redis connection
-        redis_client = redis.from_url(
-            redis_url,
-            decode_responses=False,
-            ssl_cert_reqs="none"  # Don't verify SSL certificate
-        )
-    else:
-        # Non-SSL Redis
-        redis_client = redis.from_url(redis_url, decode_responses=False)
+    # Railway deployment - parse the URL manually
+    url = urlparse(redis_url)
+    
+    # Extract connection details
+    redis_client = redis.Redis(
+        host=url.hostname,
+        port=url.port or 6379,
+        password=url.password,
+        decode_responses=False,
+        socket_connect_timeout=5,
+        socket_timeout=5
+    )
 else:
     # Local development
     redis_client = redis.Redis(
