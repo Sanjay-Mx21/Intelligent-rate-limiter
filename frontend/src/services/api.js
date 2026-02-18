@@ -1,11 +1,11 @@
-import axios from "axios";
+import axios from 'axios';
 
-// Base URL of our backend
-const API_BASE_URL = "http://localhost:8000";
+// Base URL of our backend - use Railway URL in production, localhost in development
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000,
+  timeout: 10000, // Increased timeout for Railway's slower free tier
 });
 
 // Test a single request to the rate limiter
